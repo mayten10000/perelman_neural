@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Model
+from time import time
 
 leaky_relu = lambda x: np.maximum(0.01 * x, x)  # Leaky ReLU
 relu_derivative = lambda x: (x > 0).astype(np.float32) + (x <= 0) * 0.01  # Производная для Leaky ReLU
@@ -13,11 +14,12 @@ def softmax(x):
 
 class NNdigitsCV:
     
-    def __init__(self, input_size=784, hidden_size=128, output_size=10):
-        
+    def __init__(self, input_size=784, hidden_size=128, output_size=10, dropout_rate=0.1):
+
         # Инициализация весов с использованием He для скрытого слоя и Xavier для выходного
         self.weights_input_hidden = np.random.randn(input_size, hidden_size) * np.sqrt(2.0 / input_size)
         self.weights_hidden_output = np.random.randn(hidden_size, output_size) * np.sqrt(1.0 / hidden_size)
+
         self.dropout_rate = dropout_rate
 
         self.bias_hidden = np.zeros((1, hidden_size))
@@ -68,7 +70,7 @@ class NNdigitsCV:
                 print(f"\t- Прогноз: {np.argmax(output, axis=1)}")
                 print(f"\t- Реальные метки: {np.argmax(y, axis=1)}")
 
-    def test(tryes, visual=False): 
+    def test(self, x_test, y_test, tryes, visual=False):
         
         lucky_tryes = 0
     
@@ -77,7 +79,7 @@ class NNdigitsCV:
         for i in range(tryes):
             
             sample_input = x_test[i].reshape(1, input_size)
-            prediction = nn0.forward(sample_input, training=False)  # Выключаем Dropout
+            prediction = self.forward(sample_input, training=False)
             predict_class = np.argmax(prediction)
     
             if predict_class == y_test[i]: lucky_tryes += 1
@@ -89,7 +91,7 @@ class NNdigitsCV:
     
         return round((lucky_tryes / tryes) * 100, 2)
 
-    def long_train(cntEpochs, safe_cnt, start_epochs):
+    def long_train(self, cntEpochs, safe_cnt, start_epochs):
     
         apprchs = cntEpochs // safe_cnt
     
@@ -99,7 +101,7 @@ class NNdigitsCV:
     
             nn0.save_weights(f'D:/models/model_cv_digs ({start_epochs + safe_cnt * (i + 1)}).npz')
 
-    def total_test(start, add, test_tryes):
+    def total_test(self, start, add, test_tryes):
     
         for m in range(0,26):
             
@@ -124,25 +126,25 @@ class NNdigitsCV:
         print(f"Модель успешно загружена из пути {path}")
 
     def prepare_dataset(ch=0):
-
-        if ch == 0: # MNSIT
-        
+        if ch == 0:  # MNIST
             (x_train, y_train), (x_test, y_test) = mnist.load_data()
-            
+
             # Нормализация
             x_train = x_train.astype('float32') / 255.0
             x_test = x_test.astype('float32') / 255.0
             x_train = x_train.reshape((60000, 784))
             x_test = x_test.reshape((10000, 784))
-            
+
             # One-hot encoding
             y_train_one_hot = np.zeros((y_train.size, 10))
             y_train_one_hot[np.arange(y_train.size), y_train] = 1
-            
+
             y_test_one_hot = np.zeros((y_test.size, 10))
             y_test_one_hot[np.arange(y_test.size), y_test] = 1
 
-    def start_model(skip=True):
+            return x_train, y_train_one_hot, x_test, y_test_one_hot
+
+    def start_model(self, skip=True):
 
         if skip:
 
@@ -160,7 +162,8 @@ class NNdigitsCV:
 
         if ds == 0:
 
-            prepare_dataset(ch=0)
+            x_train, y_train_one_hot, x_test, y_test_one_hot = self.prepare_dataset(ch=0)
+
 
         else:
 
@@ -176,11 +179,11 @@ class NNdigitsCV:
             
             if input("Отображать ли данные обучения ? (Y/n): ").upper() == 'Y':
 
-                train(epochs, visual=True)
+                nn0.train(x_train, y_train_one_hot, epochs, learning_rate=0.00001, visual=True)
 
             else:
 
-                train(epochs, visual=False)
+                nn0.train(x_train, y_train_one_hot, epochs, learning_rate=0.00001, visual=False)
 
         elif m == 1:
 
@@ -188,11 +191,11 @@ class NNdigitsCV:
 
             if input("Отображать ли данные тестирования ? (Y/n): ").upper() == 'Y':
 
-                test(test_data, visual=True)
+                nn0.test(x_test, y_test, test_data, visual=True)
 
             else:
 
-                test(test_data, visual=False)
+                nn0.test(x_test, y_test, test_data, visual=False)
 
         else:
             
@@ -202,6 +205,8 @@ class NNdigitsCV:
 
             
 
+nn0 = NNdigitsCV()
+nn0.start_model(skip=False)
 
                 
             
