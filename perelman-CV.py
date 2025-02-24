@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.datasets import mnist
-from tensorflow.keras.models import Model
+import os
 import time
 
 leaky_relu = lambda x: np.maximum(0.01 * x, x)  # Leaky ReLU
@@ -74,7 +74,7 @@ class NNdigitsCV:
             
             if input('Хотите ли вы сохранить модель? (Y/n): ').upper() == 'Y':
 
-                nn0.save_weights(name=f'models/{input('Введите имя модели: ')}.npz', visual=True)
+                nn0.save_weights(path=f'models/{input("Введите имя модели: ")}.npz', visual=True)
 
             else:
 
@@ -86,14 +86,14 @@ class NNdigitsCV:
         lucky_tryes = 0
     
         st = time.time()
-        
+         
         for i in range(tryes):
             
             sample_input = x_test[i].reshape(1, 784)
             prediction = self.forward(sample_input, training=False)
             predict_class = np.argmax(prediction)
     
-            if (predict_class == y_test[i]).all(): lucky_tryes += 1
+            if predict_class == np.argmax(y_test[i] == 1): lucky_tryes += 1
             
             if visual:
                 plt.imshow(x_test[i].reshape(28, 28), cmap="gray")
@@ -105,20 +105,45 @@ class NNdigitsCV:
     def long_train(self, cntEpochs, safe_cnt, start_epochs):
     
         apprchs = cntEpochs // safe_cnt
-    
+        
         for i in range(apprchs):
             
             nn0.train(x_train, y_train_one_hot, epochs=safe_cnt, learning_rate=0.00001, visual=True)
     
             nn0.save_weights(f'D:/models/model_cv_digs ({start_epochs + safe_cnt * (i + 1)}).npz')
 
-    def total_test(self, start, add, test_tryes):
-    
-        for m in range(0,26):
+    def total_test(self, test_tryes, x, y, visual=True):
+                                               
+        if visual: 
             
-            nn0.load_weights(f'model_cv_digs ({start + add * m}).npz', visual=False)
-            sumOfProbs = sum([nn0.test(10000) for _ in range(test_tryes)])
-            print(f'model_cv_digs ({start + add * m}).npz : {round(sumOfProbs / test_tryes, 2)} %')
+            #epochs, precisions = [], []
+            stata = {}
+                                              
+        models = os.listdir('models')
+        
+        for m in models:
+            
+            nn0.load_weights(f'models/{m}', visual=False)
+            sumOfProbs = sum([nn0.test(x_test=x, y_test=y, tryes=10000) for _ in range(test_tryes)])
+            print(f'{m} : {round(sumOfProbs / test_tryes, 2)} %')
+            
+            if visual:
+                
+                key = int(m[m.index('(') + 1 : m.index(')')])
+                value = round(sumOfProbs / test_tryes, 2)
+                
+                stata[key] = value
+        
+        if visual:
+            
+            sort_stata = sorted(stata.items())
+            
+            #plt.figure(figsize=(16,9))
+            plt.plot([i[0] for i in sort_stata],[i[1] for i in sort_stata], 'b.-')
+            plt.title('Соотношение кол-ва эпох обучения и точности распознавания', fontdict={'fontname' : 'Comic Sans MS', 'fontsize' : 10})
+            plt.xlabel('epochs', fontdict={'fontname' : 'Arial', 'fontsize' : 15})
+            plt.ylabel('precision', fontdict={'fontname' : 'Arial', 'fontsize' : 15})
+            plt.savefig('models', dpi=300)
 
     def save_weights(self, path='models/model_cv_digs.npz', visual=True):
         np.savez(path,
@@ -128,13 +153,13 @@ class NNdigitsCV:
                  bias_output=self.bias_output)
         if visual: print(f"Модель успешно сохранена по пути {path}")
 
-    def load_weights(self, name='models/model_cv_digs (22000).npz', visual=True):
-        data = np.load(name)
+    def load_weights(self, path='models/model_cv_digs (100).npz', visual=True):
+        data = np.load(path)
         self.weights_input_hidden = data['weights_input_hidden']
         self.weights_hidden_output = data['weights_hidden_output']
         self.bias_hidden = data['bias_hidden']
         self.bias_output = data['bias_output']
-        if visual: print(f"Модель {name} успешно загружена")
+        if visual: print(f"Модель успешно загружена из пути {path}")
 
     def prepare_dataset(self, ch=0):
         
@@ -162,6 +187,15 @@ class NNdigitsCV:
         if skip:
             
             nn0.load_weights()
+            
+            ####################################################################
+            
+            x_train, y_train_one_hot, x_test, y_test = nn0.prepare_dataset()            
+            
+            #nn0.total_test(test_tryes=10, x=x_test, y=y_test)
+            
+            ####################################################################
+            
             return "Запущен стандартный сценарий"
         
         if input("Хотите ли вы загрузить модель (иначе будет создана новая) ? (Y/n): ").upper() == 'Y': 
@@ -210,4 +244,4 @@ class NNdigitsCV:
             nn0.start_model(skip=False)            
 
 nn0 = NNdigitsCV()
-nn0.start_model(skip=False)
+nn0.start_model(skip=True)
