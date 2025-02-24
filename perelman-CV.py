@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Model
-from time import time
+import time
 
 leaky_relu = lambda x: np.maximum(0.01 * x, x)  # Leaky ReLU
 relu_derivative = lambda x: (x > 0).astype(np.float32) + (x <= 0) * 0.01  # Производная для Leaky ReLU
@@ -36,7 +36,7 @@ class NNdigitsCV:
         return self.output
 
     def backward(self, X, y, learning_rate, visual=False, l2_lambda=0.01):
-        output_error = y - self.output
+        #output_error = y - self.output
         output_delta = self.output - y  # Градиент softmax + cross-entropy
         hidden_layer_error = output_delta.dot(self.weights_hidden_output.T)
         hidden_layer_delta = hidden_layer_error * relu_derivative(self.hidden_layer_input)
@@ -70,7 +70,7 @@ class NNdigitsCV:
                 print(f"\t- Прогноз: {np.argmax(output, axis=1)}")
                 print(f"\t- Реальные метки: {np.argmax(y, axis=1)}")
 
-        if saving_possibillity=True:
+        if saving_possibillity==True:
             
             if input('Хотите ли вы сохранить модель? (Y/n): ').upper() == 'Y':
 
@@ -89,15 +89,15 @@ class NNdigitsCV:
         
         for i in range(tryes):
             
-            sample_input = x_test[i].reshape(1, input_size)
+            sample_input = x_test[i].reshape(1, 784)
             prediction = self.forward(sample_input, training=False)
             predict_class = np.argmax(prediction)
     
-            if predict_class == y_test[i]: lucky_tryes += 1
+            if (predict_class == y_test[i]).all(): lucky_tryes += 1
             
             if visual:
                 plt.imshow(x_test[i].reshape(28, 28), cmap="gray")
-                plt.title(f'Предсказание: {predict_class}\nРеальность: {y_test[i]}')
+                plt.title(f'Предсказание: {predict_class}\nРеальность: {np.argmax(y_test[i] == 1)}') #{y_test[i]}')
                 plt.show()  
     
         return round((lucky_tryes / tryes) * 100, 2)
@@ -117,26 +117,28 @@ class NNdigitsCV:
         for m in range(0,26):
             
             nn0.load_weights(f'model_cv_digs ({start + add * m}).npz', visual=False)
-            sumOfProbs = sum([test(10000) for _ in range(test_tryes)])
+            sumOfProbs = sum([nn0.test(10000) for _ in range(test_tryes)])
             print(f'model_cv_digs ({start + add * m}).npz : {round(sumOfProbs / test_tryes, 2)} %')
 
-    def save_weights(self, name='model_cv_digs.npz', visual=True):
+    def save_weights(self, path='models/model_cv_digs.npz', visual=True):
         np.savez(path,
                  weights_input_hidden=self.weights_input_hidden,
                  weights_hidden_output=self.weights_hidden_output,
                  bias_hidden=self.bias_hidden,
                  bias_output=self.bias_output)
-        if visual: print(f"Модель {name} успешно сохранена")
+        if visual: print(f"Модель успешно сохранена по пути {path}")
 
-    def load_weights(self, name='model_cv_digs (22000).npz', visual=True):
-        data = np.load(path)
+    def load_weights(self, name='models/model_cv_digs (22000).npz', visual=True):
+        data = np.load(name)
         self.weights_input_hidden = data['weights_input_hidden']
         self.weights_hidden_output = data['weights_hidden_output']
         self.bias_hidden = data['bias_hidden']
         self.bias_output = data['bias_output']
         if visual: print(f"Модель {name} успешно загружена")
 
-    def prepare_dataset(ch=0):
+    def prepare_dataset(self, ch=0):
+        
+        
         if ch == 0:  # MNIST
             (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
@@ -170,11 +172,12 @@ class NNdigitsCV:
 
         if ds == 0:
 
-            x_train, y_train_one_hot, x_test, y_test_one_hot = self.prepare_dataset(ch=0)
+            x_train, y_train_one_hot, x_test, y_test = nn0.prepare_dataset()
+            print(type(y_test))
             
         else:
             print("Некорректный ввод. Программа будет перезапущена...")
-            start_model(skip=False)  
+            nn0.start_model(skip=False)  
             
         m = int(input("Выберите режим:\n- (0) - Обучение ;\n- (1) - Тестирование ;\n> "))
 
@@ -204,7 +207,7 @@ class NNdigitsCV:
 
         else:
             print("Некорректный ввод. Программа будет перезапущена...")
-            start_model(skip=False)            
+            nn0.start_model(skip=False)            
 
 nn0 = NNdigitsCV()
 nn0.start_model(skip=False)
