@@ -74,7 +74,7 @@ class NNdigitsCV:
             
             if input('Хотите ли вы сохранить модель? (Y/n): ').upper() == 'Y':
 
-                save_weights(name=input('Введите имя модели: '), visual=True)
+                nn0.save_weights(name=f'models/{input('Введите имя модели: ')}.npz', visual=True)
 
             else:
 
