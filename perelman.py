@@ -58,7 +58,7 @@ class NNdigitsCV:
             print(f"Средний градиент скрытого слоя: {np.mean(np.abs(hidden_layer_delta))}")
             print(f"Средний градиент выходного слоя: {np.mean(np.abs(output_delta))}")
 
-    def train(self, X, y, epochs, learning_rate, visual=False):
+    def train(self, X, y, epochs, learning_rate, visual=False, saving_possibillity=True):
         
         for i in range(epochs):
             self.forward(X, training=True)
@@ -69,6 +69,17 @@ class NNdigitsCV:
                 print(f"Эпоха {i+1}/{epochs} пройдена:")
                 print(f"\t- Прогноз: {np.argmax(output, axis=1)}")
                 print(f"\t- Реальные метки: {np.argmax(y, axis=1)}")
+
+        if saving_possibillity=True:
+            
+            if input('Хотите ли вы сохранить модель? (Y/n): ').upper() == 'Y':
+
+                save_weights(name=input('Введите имя модели: '), visual=True)
+
+            else:
+
+                print('Модель не была сохранена после обучения')
+                
 
     def test(self, x_test, y_test, tryes, visual=False):
         
@@ -105,25 +116,25 @@ class NNdigitsCV:
     
         for m in range(0,26):
             
-            nn0.load_weights(f'D:/models/model_cv_digs ({start + add * m}).npz', visual=False)
+            nn0.load_weights(f'model_cv_digs ({start + add * m}).npz', visual=False)
             sumOfProbs = sum([test(10000) for _ in range(test_tryes)])
             print(f'model_cv_digs ({start + add * m}).npz : {round(sumOfProbs / test_tryes, 2)} %')
 
-    def save_weights(self, path='model_cv_digs (22000).npz', visual=True):
+    def save_weights(self, name='model_cv_digs.npz', visual=True):
         np.savez(path,
                  weights_input_hidden=self.weights_input_hidden,
                  weights_hidden_output=self.weights_hidden_output,
                  bias_hidden=self.bias_hidden,
                  bias_output=self.bias_output)
-        print(f"Модель успешно сохранена по пути {path}")
+        if visual: print(f"Модель {name} успешно сохранена")
 
-    def load_weights(self, path, visual=True):
+    def load_weights(self, name='model_cv_digs (22000).npz', visual=True):
         data = np.load(path)
         self.weights_input_hidden = data['weights_input_hidden']
         self.weights_hidden_output = data['weights_hidden_output']
         self.bias_hidden = data['bias_hidden']
         self.bias_output = data['bias_output']
-        print(f"Модель успешно загружена из пути {path}")
+        if visual: print(f"Модель {name} успешно загружена")
 
     def prepare_dataset(ch=0):
         if ch == 0:  # MNIST
@@ -147,12 +158,9 @@ class NNdigitsCV:
     def start_model(self, skip=True):
 
         if skip:
-
-            nn0 = NNdigitsCV()
+            
             nn0.load_weights()
             return "Запущен стандартный сценарий"
-
-        nn0 = NNdigitsCV()
         
         if input("Хотите ли вы загрузить модель (иначе будет создана новая) ? (Y/n): ").upper() == 'Y': 
             
@@ -163,13 +171,10 @@ class NNdigitsCV:
         if ds == 0:
 
             x_train, y_train_one_hot, x_test, y_test_one_hot = self.prepare_dataset(ch=0)
-
-
+            
         else:
-
-            pass # start_model(skip=False)
-
-            # Ошибка
+            print("Некорректный ввод. Программа будет перезапущена...")
+            start_model(skip=False)  
             
         m = int(input("Выберите режим:\n- (0) - Обучение ;\n- (1) - Тестирование ;\n> "))
 
@@ -179,11 +184,11 @@ class NNdigitsCV:
             
             if input("Отображать ли данные обучения ? (Y/n): ").upper() == 'Y':
 
-                nn0.train(x_train, y_train_one_hot, epochs, learning_rate=0.00001, visual=True)
+                nn0.train(x_train, y_train_one_hot, epochs, learning_rate=0.00001, visual=True, saving_possibillity=True)
 
             else:
 
-                nn0.train(x_train, y_train_one_hot, epochs, learning_rate=0.00001, visual=False)
+                nn0.train(x_train, y_train_one_hot, epochs, learning_rate=0.00001, visual=False, saving_possibillity=True)
 
         elif m == 1:
 
@@ -198,21 +203,8 @@ class NNdigitsCV:
                 nn0.test(x_test, y_test, test_data, visual=False)
 
         else:
-            
-            pass # start_model(skip=False)
-
-            # Ошибка
-
-            
+            print("Некорректный ввод. Программа будет перезапущена...")
+            start_model(skip=False)            
 
 nn0 = NNdigitsCV()
 nn0.start_model(skip=False)
-
-                
-            
-
-
-        
-            
-        
-
