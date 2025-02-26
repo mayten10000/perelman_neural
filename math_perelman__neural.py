@@ -1,9 +1,7 @@
 import random
 import re
-
 import numpy as np
 import pandas as pd
-from pandas import *
 
 def relu(x):
     return np.maximum(0, x)
@@ -11,18 +9,26 @@ def relu(x):
 def relu_derivative(x):
     return (x > 0).astype(float)
 
-
-def parse_equation(equation):
-
-    match = re.match(r"([+-]?\d*)x\s*([+-]?\s*\d*)\s*=\s*([+-]?\d+)", equation)
-    if not match:
-        raise ValueError(f"Неправильный формат уравнения: {equation}")
-
-    a = int(match.group(1)) if match.group(1) not in ["", "+", "-"] else (1 if match.group(1) == "+" else -1)
-    b = int(match.group(2).replace(" ", "")) if match.group(2) else 0
-    c = int(match.group(3))
-
-    return [a, b], c
+def parse_equation(eq):
+    a, b = 0, 0
+    
+    for s in '+-*/': eq = eq.replace(f' {s} ', f' {s}')
+    
+    eq = eq.split()
+    
+    for mI in range(0, eq.index('=')):
+        if 'x' in eq[mI]:
+            a += int(eq[mI][:-1])
+        else:
+            b -= int(eq[mI])
+            
+    for mI in range(eq.index('=')  + 1, len(eq)):
+        if 'x' in eq[mI]:
+            a -= int(eq[mI][:-1])
+        else:
+            b += int(eq[mI])
+            
+    return a, b
 
 
 def load_data_from_csv(file_path):
