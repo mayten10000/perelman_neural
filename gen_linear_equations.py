@@ -1,5 +1,6 @@
 from random import *
 from math import *
+from fractions import Fraction as F
 
 def generate_linear_equation(n):
 
@@ -102,21 +103,14 @@ def get_answer(s):
         
         if b != 0:
 
-            if a < 0:
-                    
-                return [s, f'{-(b // gcd(a,b))}/{(abs(a) // gcd(a,b))}']
-            
-            else:
-                
-                return [s, f'{(b // gcd(a,b))}/{(a // gcd(a,b))}']
-        
+            return (s, F(b, a))
         else:
             
-            return [s, "Истина (любое число)"]
+            return (s, "Истина (любое число)")
     
     else:
         
-        return [s, "Ложь (пустое множество)"]
+        return (s, "Ложь (пустое множество)")
     
     
 
@@ -124,5 +118,5 @@ sign_fix = lambda s: s.replace('+ -', '- ').replace('- +', '- ').replace('- -', 
 
 n = 4 # int(input())
 
-for i in range(10):
-    print(i, generate_linear_equation(n), '\n')
+for _ in range(10):
+    print(*generate_linear_equation(n), sep=' | ')
